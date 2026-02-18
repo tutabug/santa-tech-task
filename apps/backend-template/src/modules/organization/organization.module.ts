@@ -1,12 +1,17 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../../database/database.module';
 import { OrganizationController } from './organization.controller';
-import { CreateOrganizationUseCase } from './application';
+import {
+  CreateOrganizationUseCase,
+  ListUserOrganizationsUseCase,
+  OrganizationReadRepository,
+} from './application';
 import {
   OrganizationRepository,
   OrganizationMemberRepository,
 } from './domain';
 import {
+  OrganizationReadRepositoryImpl,
   OrganizationRepositoryImpl,
   OrganizationMemberRepositoryImpl,
 } from './infrastructure';
@@ -21,8 +26,13 @@ import {
   providers: [
     // Application Layer
     CreateOrganizationUseCase,
+    ListUserOrganizationsUseCase,
 
     // Infrastructure Layer - Repository Implementations
+    {
+      provide: OrganizationReadRepository,
+      useClass: OrganizationReadRepositoryImpl,
+    },
     {
       provide: OrganizationRepository,
       useClass: OrganizationRepositoryImpl,
@@ -38,6 +48,8 @@ import {
   ],
   exports: [
     CreateOrganizationUseCase,
+    ListUserOrganizationsUseCase,
+    OrganizationReadRepository,
     OrganizationRepository,
     OrganizationMemberRepository,
   ],

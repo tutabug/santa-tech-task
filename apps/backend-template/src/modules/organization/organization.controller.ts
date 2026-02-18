@@ -1,15 +1,20 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { SessionGuard } from '../../common/guards/session.guard';
-import { CreateOrganizationUseCase } from './application';
+import {
+  CreateOrganizationUseCase,
+  ListUserOrganizationsUseCase,
+} from './application';
 import {
   CreateOrganizationDto,
+  OrganizationListItemDto,
   OrganizationResponseDto,
 } from './dto';
 
@@ -18,6 +23,7 @@ import {
 export class OrganizationController {
   constructor(
     private readonly createOrganizationUseCase: CreateOrganizationUseCase,
+    private readonly listUserOrganizationsUseCase: ListUserOrganizationsUseCase,
   ) {}
 
   @Post()
@@ -45,5 +51,23 @@ export class OrganizationController {
     );
 
     return OrganizationResponseDto.fromAggregate(organization);
+  }
+
+  @Get()
+  @UseGuards(SessionGuard)
+  @ApiOperation({
+    summary: 'List all organizations for current user',
+    description: 'Returns all organizations where the user is a member.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of organizations.',
+    type: [OrganizationListItemDto],
+  })
+  @ApiResponse({ status: 401, description: 'User not authenticated.' })
+  async list(
+    @CurrentUser() user: { id: string },
+  ): Promise<OrganizationListItemDto[]> {
+    return this.listUserOrganizationsUseCase.execute(user.id);
   }
 }

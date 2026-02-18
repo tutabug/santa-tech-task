@@ -2,7 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext } from '@nestjs/common';
 import { SessionGuard } from '../../common/guards/session.guard';
 import { OrganizationController } from './organization.controller';
-import { CreateOrganizationUseCase } from './application';
+import {
+  CreateOrganizationUseCase,
+  ListUserOrganizationsUseCase,
+} from './application';
 import {
   CreateOrganizationDto,
   OrganizationResponseDto,
@@ -12,6 +15,7 @@ import { Organization } from './domain';
 describe('OrganizationController', () => {
   let controller: OrganizationController;
   let mockCreateOrganizationUseCase: jest.Mocked<CreateOrganizationUseCase>;
+  let mockListUserOrganizationsUseCase: jest.Mocked<ListUserOrganizationsUseCase>;
 
   const mockSessionGuard = {
     canActivate: (context: ExecutionContext) => true,
@@ -21,6 +25,9 @@ describe('OrganizationController', () => {
     mockCreateOrganizationUseCase = {
       execute: jest.fn(),
     } as any;
+    mockListUserOrganizationsUseCase = {
+      execute: jest.fn(),
+    } as any;
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrganizationController],
@@ -28,6 +35,10 @@ describe('OrganizationController', () => {
         {
           provide: CreateOrganizationUseCase,
           useValue: mockCreateOrganizationUseCase,
+        },
+        {
+          provide: ListUserOrganizationsUseCase,
+          useValue: mockListUserOrganizationsUseCase,
         },
       ],
     })

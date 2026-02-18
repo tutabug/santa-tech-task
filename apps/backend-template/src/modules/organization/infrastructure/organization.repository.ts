@@ -29,4 +29,21 @@ export class OrganizationRepositoryImpl extends OrganizationRepository {
 
     return OrganizationMapper.toDomain(saved);
   }
+
+  async findByUserId(userId: string): Promise<Organization[]> {
+    const organizations = await this.prisma.organization.findMany({
+      where: {
+        members: {
+          some: {
+            userId,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return organizations.map(OrganizationMapper.toDomain);
+  }
 }

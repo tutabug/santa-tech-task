@@ -18,6 +18,11 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
+  // Domain relations
+  memberships   OrganizationMember[]
+  uploadedSongs Song[]               @relation("UploadedSongs")
+  createdPitches Pitch[]             @relation("CreatedPitches")
+
   @@map("user")
 }
 
@@ -63,4 +68,103 @@ model Verification {
   updatedAt  DateTime @updatedAt
 
   @@map("verification")
+}
+
+// ─── Domain Models ──────────────────────────────────────────────
+
+enum OrganizationRole {
+  MANAGER
+  SONGWRITER
+}
+
+enum PitchStatus {
+  DRAFT
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+}
+
+model Organization {
+  id          String               @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  members     OrganizationMember[]
+  songs       Song[]
+
+  @@map("organization")
+}
+
+model OrganizationMember {
+  id             String           @id @default(cuid())
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           OrganizationRole
+  joinedAt       DateTime         @default(now())
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("organization_member")
+}
+
+model Song {
+  id             String       @id @default(cuid())
+  title          String
+  artist         String?
+  duration       Int? // duration in seconds
+  filePath       String
+  mimeType       String?
+  fileSize       Int? // size in bytes
+  uploadedById   String
+  uploadedBy     User         @relation("UploadedSongs", fields: [uploadedById], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  pitches        Pitch[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([uploadedById])
+  @@map("song")
+}
+
+model Pitch {
+  id            String              @id @default(cuid())
+  songId        String
+  song          Song                @relation(fields: [songId], references: [id], onDelete: Cascade)
+  createdById   String
+  createdBy     User                @relation("CreatedPitches", fields: [createdById], references: [id], onDelete: Cascade)
+  description   String
+  status        PitchStatus         @default(DRAFT)
+  targetArtists PitchTargetArtist[]
+  tags          Tag[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([songId])
+  @@index([createdById])
+  @@map("pitch")
+}
+
+// ─── Stretch / Domain-Thinking Models ───────────────────────────
+
+model PitchTargetArtist {
+  id        String @id @default(cuid())
+  pitchId   String
+  pitch     Pitch  @relation(fields: [pitchId], references: [id], onDelete: Cascade)
+  name      String
+
+  @@index([pitchId])
+  @@map("pitch_target_artist")
+}
+
+model Tag {
+  id      String  @id @default(cuid())
+  name    String  @unique
+  pitches Pitch[]
+
+  @@map("tag")
 }

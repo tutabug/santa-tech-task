@@ -1,3 +1,5 @@
+import { PaginatedResult, PaginationCursor } from '../../../common/pagination';
+
 export type OrganizationListItem = {
   id: string;
   name: string;
@@ -6,6 +8,14 @@ export type OrganizationListItem = {
   updatedAt: Date;
 };
 
+export type OrganizationListQuery = {
+  limit: number;
+  cursor?: PaginationCursor | null;
+};
+
 export abstract class OrganizationReadRepository {
-  abstract findByUserId(userId: string): Promise<OrganizationListItem[]>;
+  abstract findByUserId(
+    userId: string,
+    query: OrganizationListQuery,
+  ): Promise<PaginatedResult<OrganizationListItem>>;
 }

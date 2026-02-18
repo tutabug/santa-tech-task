@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { PaginatedResult } from '../../../common/pagination';
 import {
   OrganizationListItem,
+  OrganizationListQuery,
   OrganizationReadRepository,
 } from './organization-read.repository.interface';
 
@@ -12,8 +14,8 @@ import {
  * - Returns list of organization read models
  * - Optimized query at repository level (no need to load all members)
  *
- * Input: userId
- * Output: OrganizationListItem[] (sorted by createdAt desc)
+ * Input: userId, query
+ * Output: PaginatedResult<OrganizationListItem> (sorted by createdAt desc)
  */
 @Injectable()
 export class ListUserOrganizationsUseCase {
@@ -21,7 +23,10 @@ export class ListUserOrganizationsUseCase {
     private readonly organizationReadRepository: OrganizationReadRepository,
   ) {}
 
-  async execute(userId: string): Promise<OrganizationListItem[]> {
-    return this.organizationReadRepository.findByUserId(userId);
+  async execute(
+    userId: string,
+    query: OrganizationListQuery,
+  ): Promise<PaginatedResult<OrganizationListItem>> {
+    return this.organizationReadRepository.findByUserId(userId, query);
   }
 }

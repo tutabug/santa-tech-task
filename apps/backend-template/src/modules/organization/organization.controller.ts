@@ -3,17 +3,26 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { SessionGuard } from '../../common/guards/session.guard';
+import {
+  ApiPaginatedResponse,
+  decodeCursor,
+  DEFAULT_PAGE_LIMIT,
+  PaginatedResult,
+} from '../../common/pagination';
 import {
   CreateOrganizationUseCase,
   ListUserOrganizationsUseCase,
 } from './application';
 import {
   CreateOrganizationDto,
+  OrganizationListQueryDto,
   OrganizationListItemDto,
   OrganizationResponseDto,
 } from './dto';
@@ -59,15 +68,26 @@ export class OrganizationController {
     summary: 'List all organizations for current user',
     description: 'Returns all organizations where the user is a member.',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'List of organizations.',
-    type: [OrganizationListItemDto],
-  })
+  @ApiPaginatedResponse(OrganizationListItemDto)
   @ApiResponse({ status: 401, description: 'User not authenticated.' })
   async list(
     @CurrentUser() user: { id: string },
-  ): Promise<OrganizationListItemDto[]> {
-    return this.listUserOrganizationsUseCase.execute(user.id);
+    @Query() query: OrganizationListQueryDto,
+  ): Promise<PaginatedResult<OrganizationListItemDto>> {
+    const limit = query.limit ?? DEFAULT_PAGE_LIMIT;
+    let cursor = undefined;
+
+    if (query.cursor) {
+      try {
+        cursor = decodeCursor(query.cursor);
+      } catch {
+        throw new BadRequestException('Invalid cursor');
+      }
+    }
+
+    return this.listUserOrganizationsUseCase.execute(user.id, {
+      limit,
+      cursor,
+    });
   }
 }

@@ -3,7 +3,9 @@ import { DatabaseModule } from '../../database/database.module';
 import { OrganizationController } from './organization.controller';
 import {
   CreateOrganizationUseCase,
+  ListOrganizationMembersUseCase,
   ListUserOrganizationsUseCase,
+  OrganizationMemberReadRepository,
   OrganizationReadRepository,
 } from './application';
 import {
@@ -11,6 +13,7 @@ import {
   OrganizationMemberRepository,
 } from './domain';
 import {
+  OrganizationMemberReadRepositoryImpl,
   OrganizationReadRepositoryImpl,
   OrganizationRepositoryImpl,
   OrganizationMemberRepositoryImpl,
@@ -26,12 +29,17 @@ import {
   providers: [
     // Application Layer
     CreateOrganizationUseCase,
+    ListOrganizationMembersUseCase,
     ListUserOrganizationsUseCase,
 
     // Infrastructure Layer - Repository Implementations
     {
       provide: OrganizationReadRepository,
       useClass: OrganizationReadRepositoryImpl,
+    },
+    {
+      provide: OrganizationMemberReadRepository,
+      useClass: OrganizationMemberReadRepositoryImpl,
     },
     {
       provide: OrganizationRepository,
@@ -48,7 +56,9 @@ import {
   ],
   exports: [
     CreateOrganizationUseCase,
+    ListOrganizationMembersUseCase,
     ListUserOrganizationsUseCase,
+    OrganizationMemberReadRepository,
     OrganizationReadRepository,
     OrganizationRepository,
     OrganizationMemberRepository,

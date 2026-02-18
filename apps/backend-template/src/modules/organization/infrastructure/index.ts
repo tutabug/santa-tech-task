@@ -3,3 +3,4 @@ export * from './organization-read.repository';
 export * from './organization.repository';
 export * from './organization-member.mapper';
 export * from './organization-member.repository';
+export * from './organization-member-read.repository';

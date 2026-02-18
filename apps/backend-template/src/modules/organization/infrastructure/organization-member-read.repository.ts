@@ -6,6 +6,7 @@ import {
   OrganizationMemberReadRepository,
 } from '../application';
 import { CursorService, PaginatedResult } from '../../../common/pagination';
+import { OrganizationRole } from '../domain';
 
 @Injectable()
 export class OrganizationMemberReadRepositoryImpl extends OrganizationMemberReadRepository {
@@ -69,7 +70,7 @@ export class OrganizationMemberReadRepositoryImpl extends OrganizationMemberRead
         userId: member.userId,
         email: member.user.email,
         name: member.user.name,
-        role: member.role,
+        role: member.role as OrganizationRole,
         joinedAt: member.joinedAt,
       })),
       pagination: {

@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext } from '@nestjs/common';
 import { SessionGuard } from '../../common/guards/session.guard';
-import { CursorService } from '../../common/pagination';
+import { CursorDecodePipe, CursorService } from '../../common/pagination';
 import { OrganizationController } from './organization.controller';
 import {
   CreateOrganizationUseCase,
+  ListOrganizationMembersUseCase,
   ListUserOrganizationsUseCase,
 } from './application';
 import {
@@ -12,10 +13,12 @@ import {
   OrganizationResponseDto,
 } from './dto';
 import { Organization } from './domain';
+import { OrganizationRoleGuard } from './guards';
 
 describe('OrganizationController', () => {
   let controller: OrganizationController;
   let mockCreateOrganizationUseCase: jest.Mocked<CreateOrganizationUseCase>;
+  let mockListOrganizationMembersUseCase: jest.Mocked<ListOrganizationMembersUseCase>;
   let mockListUserOrganizationsUseCase: jest.Mocked<ListUserOrganizationsUseCase>;
 
   const mockSessionGuard = {
@@ -24,6 +27,9 @@ describe('OrganizationController', () => {
 
   beforeEach(async () => {
     mockCreateOrganizationUseCase = {
+      execute: jest.fn(),
+    } as any;
+    mockListOrganizationMembersUseCase = {
       execute: jest.fn(),
     } as any;
     mockListUserOrganizationsUseCase = {
@@ -38,14 +44,21 @@ describe('OrganizationController', () => {
           useValue: mockCreateOrganizationUseCase,
         },
         {
+          provide: ListOrganizationMembersUseCase,
+          useValue: mockListOrganizationMembersUseCase,
+        },
+        {
           provide: ListUserOrganizationsUseCase,
           useValue: mockListUserOrganizationsUseCase,
         },
         CursorService,
+        CursorDecodePipe,
       ],
     })
       .overrideGuard(SessionGuard)
       .useValue(mockSessionGuard)
+      .overrideGuard(OrganizationRoleGuard)
+      .useValue({ canActivate: () => true })
       .compile();
 
     controller = module.get<OrganizationController>(OrganizationController);

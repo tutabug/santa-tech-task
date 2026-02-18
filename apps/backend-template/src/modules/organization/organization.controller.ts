@@ -2,38 +2,41 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   Query,
   UseGuards,
-  BadRequestException,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { SessionGuard } from '../../common/guards/session.guard';
 import {
   ApiPaginatedResponse,
-  CursorService,
-  DEFAULT_PAGE_LIMIT,
+  CursorDecodePipe,
   PaginatedResult,
+  PaginationQuery,
 } from '../../common/pagination';
 import {
   CreateOrganizationUseCase,
+  ListOrganizationMembersUseCase,
   ListUserOrganizationsUseCase,
 } from './application';
+import { OrganizationRole } from './domain';
 import {
   CreateOrganizationDto,
-  OrganizationListQueryDto,
   OrganizationListItemDto,
+  OrganizationMemberListItemDto,
   OrganizationResponseDto,
 } from './dto';
+import { OrganizationRoleGuard, RequireOrgRole } from './guards';
 
 @ApiTags('organizations')
 @Controller('organizations')
 export class OrganizationController {
   constructor(
     private readonly createOrganizationUseCase: CreateOrganizationUseCase,
+    private readonly listOrganizationMembersUseCase: ListOrganizationMembersUseCase,
     private readonly listUserOrganizationsUseCase: ListUserOrganizationsUseCase,
-    private readonly cursorService: CursorService,
   ) {}
 
   @Post()
@@ -73,22 +76,26 @@ export class OrganizationController {
   @ApiResponse({ status: 401, description: 'User not authenticated.' })
   async list(
     @CurrentUser() user: { id: string },
-    @Query() query: OrganizationListQueryDto,
+    @Query(CursorDecodePipe) query: PaginationQuery,
   ): Promise<PaginatedResult<OrganizationListItemDto>> {
-    const limit = query.limit ?? DEFAULT_PAGE_LIMIT;
-    let cursor = undefined;
+    return this.listUserOrganizationsUseCase.execute(user.id, query);
+  }
 
-    if (query.cursor) {
-      try {
-        cursor = this.cursorService.decode(query.cursor);
-      } catch {
-        throw new BadRequestException('Invalid cursor');
-      }
-    }
-
-    return this.listUserOrganizationsUseCase.execute(user.id, {
-      limit,
-      cursor,
-    });
+  @Get(':id/members')
+  @UseGuards(SessionGuard, OrganizationRoleGuard)
+  @RequireOrgRole(OrganizationRole.MANAGER)
+  @ApiOperation({
+    summary: 'List all members of an organization',
+    description:
+      'Returns all members of the organization. Only accessible by managers.',
+  })
+  @ApiPaginatedResponse(OrganizationMemberListItemDto)
+  @ApiResponse({ status: 401, description: 'User not authenticated.' })
+  @ApiResponse({ status: 403, description: 'User is not a manager of this organization.' })
+  async listMembers(
+    @Param('id') organizationId: string,
+    @Query(CursorDecodePipe) query: PaginationQuery,
+  ): Promise<PaginatedResult<OrganizationMemberListItemDto>> {
+    return this.listOrganizationMembersUseCase.execute(organizationId, query);
   }
 }

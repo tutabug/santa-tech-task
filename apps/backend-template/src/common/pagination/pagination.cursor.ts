@@ -1,40 +1,48 @@
+import { Injectable } from '@nestjs/common';
 import { PaginationCursor } from './pagination.types';
 
-export type PaginationCursorPayload = {
+type CursorPayload = {
   createdAt: string;
   id: string;
 };
 
-export const encodeCursor = (cursor: PaginationCursor): string => {
-  const payload: PaginationCursorPayload = {
-    createdAt: cursor.createdAt.toISOString(),
-    id: cursor.id,
-  };
+@Injectable()
+export class CursorService {
+  encode(cursor: PaginationCursor): string {
+    const payload: CursorPayload = {
+      createdAt: cursor.createdAt.toISOString(),
+      id: cursor.id,
+    };
 
-  return Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
-};
-
-export const decodeCursor = (cursor: string): PaginationCursor => {
-  let payload: PaginationCursorPayload;
-
-  try {
-    const raw = Buffer.from(cursor, 'base64').toString('utf8');
-    payload = JSON.parse(raw) as PaginationCursorPayload;
-  } catch {
-    throw new Error('Invalid cursor');
+    return Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
   }
 
-  if (!payload || typeof payload.createdAt !== 'string' || typeof payload.id !== 'string') {
-    throw new Error('Invalid cursor');
-  }
+  decode(cursor: string): PaginationCursor {
+    let payload: CursorPayload;
 
-  const createdAt = new Date(payload.createdAt);
-  if (Number.isNaN(createdAt.getTime())) {
-    throw new Error('Invalid cursor');
-  }
+    try {
+      const raw = Buffer.from(cursor, 'base64').toString('utf8');
+      payload = JSON.parse(raw) as CursorPayload;
+    } catch {
+      throw new Error('Invalid cursor');
+    }
 
-  return {
-    createdAt,
-    id: payload.id,
-  };
-};
+    if (
+      !payload ||
+      typeof payload.createdAt !== 'string' ||
+      typeof payload.id !== 'string'
+    ) {
+      throw new Error('Invalid cursor');
+    }
+
+    const createdAt = new Date(payload.createdAt);
+    if (Number.isNaN(createdAt.getTime())) {
+      throw new Error('Invalid cursor');
+    }
+
+    return {
+      createdAt,
+      id: payload.id,
+    };
+  }
+}

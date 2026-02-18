@@ -6,13 +6,16 @@ import {
   OrganizationReadRepository,
 } from '../application';
 import {
-  encodeCursor,
+  CursorService,
   PaginatedResult,
 } from '../../../common/pagination';
 
 @Injectable()
 export class OrganizationReadRepositoryImpl extends OrganizationReadRepository {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cursorService: CursorService,
+  ) {
     super();
   }
 
@@ -64,7 +67,7 @@ export class OrganizationReadRepositoryImpl extends OrganizationReadRepository {
         limit,
         hasMore,
         nextCursor: hasMore && lastItem
-          ? encodeCursor({
+          ? this.cursorService.encode({
               createdAt: lastItem.createdAt,
               id: lastItem.id,
             })

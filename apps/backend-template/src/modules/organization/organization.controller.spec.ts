@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext } from '@nestjs/common';
 import { SessionGuard } from '../../common/guards/session.guard';
+import { CursorService } from '../../common/pagination';
 import { OrganizationController } from './organization.controller';
 import {
   CreateOrganizationUseCase,
@@ -40,6 +41,7 @@ describe('OrganizationController', () => {
           provide: ListUserOrganizationsUseCase,
           useValue: mockListUserOrganizationsUseCase,
         },
+        CursorService,
       ],
     })
       .overrideGuard(SessionGuard)

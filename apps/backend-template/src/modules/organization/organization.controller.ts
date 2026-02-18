@@ -12,7 +12,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { SessionGuard } from '../../common/guards/session.guard';
 import {
   ApiPaginatedResponse,
-  decodeCursor,
+  CursorService,
   DEFAULT_PAGE_LIMIT,
   PaginatedResult,
 } from '../../common/pagination';
@@ -33,6 +33,7 @@ export class OrganizationController {
   constructor(
     private readonly createOrganizationUseCase: CreateOrganizationUseCase,
     private readonly listUserOrganizationsUseCase: ListUserOrganizationsUseCase,
+    private readonly cursorService: CursorService,
   ) {}
 
   @Post()
@@ -79,7 +80,7 @@ export class OrganizationController {
 
     if (query.cursor) {
       try {
-        cursor = decodeCursor(query.cursor);
+        cursor = this.cursorService.decode(query.cursor);
       } catch {
         throw new BadRequestException('Invalid cursor');
       }

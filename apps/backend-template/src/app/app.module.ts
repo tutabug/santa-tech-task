@@ -9,6 +9,7 @@ import { HealthModule } from '../health/health.module';
 import { LoggerModule } from 'nestjs-pino';
 import { Module } from '@nestjs/common';
 import { OrganizationModule } from '../modules/organization/organization.module';
+import { PaginationModule } from '../common/pagination';
 import { ResponseInterceptor } from '../common/interceptors/response.interceptor';
 import { UserModule } from '../modules/user/user.module';
 import appConfig from '../config/app.config';
@@ -49,6 +50,7 @@ import { validate } from '../config/env.schema';
       },
     }),
     DatabaseModule,
+    PaginationModule,
     AuthModule,
     UserModule,
     OrganizationModule,

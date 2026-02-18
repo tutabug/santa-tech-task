@@ -8,6 +8,7 @@ import { GlobalExceptionFilter } from '../common/filters/global-exception.filter
 import { HealthModule } from '../health/health.module';
 import { LoggerModule } from 'nestjs-pino';
 import { Module } from '@nestjs/common';
+import { OrganizationModule } from '../modules/organization/organization.module';
 import { ResponseInterceptor } from '../common/interceptors/response.interceptor';
 import { UserModule } from '../modules/user/user.module';
 import appConfig from '../config/app.config';
@@ -50,6 +51,7 @@ import { validate } from '../config/env.schema';
     DatabaseModule,
     AuthModule,
     UserModule,
+    OrganizationModule,
     HealthModule,
   ],
   controllers: [],

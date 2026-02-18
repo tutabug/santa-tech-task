@@ -4,7 +4,6 @@ import {
   Get,
   Param,
   Post,
-  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -42,18 +41,11 @@ export class UserController {
     description: 'Return current user profile.',
     type: UserResponseDto,
   })
-  async getProfile(@CurrentUser() user: unknown): Promise<UserResponseDto> {
-    if (
-      !user ||
-      typeof user !== 'object' ||
-      !('id' in user) ||
-      typeof (user as { id: unknown }).id !== 'string'
-    ) {
-      throw new UnauthorizedException('Invalid user context');
-    }
-
-    const userId = (user as { id: string }).id;
-    const domainUser = await this.userAppService.getUserById(userId);
+  async getProfile(
+    @CurrentUser() user: { id: string },
+  ): Promise<UserResponseDto> {
+    // User validation handled by SessionGuard
+    const domainUser = await this.userAppService.getUserById(user.id);
     return UserResponseDto.fromAggregate(domainUser);
   }
 

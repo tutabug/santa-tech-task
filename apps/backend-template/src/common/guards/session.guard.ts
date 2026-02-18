@@ -33,10 +33,22 @@ export class SessionGuard implements CanActivate {
     });
 
     if (!session) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Session not found');
     }
 
-    request['user'] = session.user;
+    const user = session.user;
+    
+    // Validate user structure to ensure controllers receive valid data
+    if (
+      !user ||
+      typeof user !== 'object' ||
+      !('id' in user) ||
+      typeof user.id !== 'string'
+    ) {
+      throw new UnauthorizedException('Invalid user session');
+    }
+
+    request['user'] = user;
     request['session'] = session.session;
     return true;
   }

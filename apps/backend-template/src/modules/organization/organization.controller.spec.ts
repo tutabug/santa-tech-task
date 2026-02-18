@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { ExecutionContext } from '@nestjs/common';
 import { SessionGuard } from '../../common/guards/session.guard';
 import { OrganizationController } from './organization.controller';
 import { CreateOrganizationUseCase } from './application';
@@ -85,24 +85,6 @@ describe('OrganizationController', () => {
       );
 
       expect(result.description).toBeNull();
-    });
-
-    it('should throw UnauthorizedException if user is not provided', async () => {
-      await expect(controller.create(dto, null)).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
-
-    it('should throw UnauthorizedException if user has no id', async () => {
-      await expect(controller.create(dto, {})).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
-
-    it('should throw UnauthorizedException if user id is not a string', async () => {
-      await expect(controller.create(dto, { id: 123 })).rejects.toThrow(
-        UnauthorizedException,
-      );
     });
 
     it('should extract primitives from DTO before calling use case', async () => {

@@ -31,4 +31,20 @@ export class OrganizationMemberRepositoryImpl extends OrganizationMemberReposito
 
     return OrganizationMemberMapper.toDomain(saved);
   }
+
+  async findMembership(
+    organizationId: string,
+    userId: string,
+  ): Promise<OrganizationMember | null> {
+    const member = await this.prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId,
+          userId,
+        },
+      },
+    });
+    if (!member) return null;
+    return OrganizationMemberMapper.toDomain(member);
+  }
 }

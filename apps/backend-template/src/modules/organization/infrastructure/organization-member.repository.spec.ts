@@ -110,4 +110,52 @@ describe('OrganizationMemberRepository', () => {
       );
     });
   });
+
+  describe('findMembership', () => {
+    it('should find membership by organizationId and userId', async () => {
+      const orgId = 'org-123';
+      const userId = 'user-456';
+      const now = new Date();
+
+      const prismaMember = {
+        id: 'member-123',
+        organizationId: orgId,
+        userId,
+        role: OrganizationRole.MANAGER,
+        joinedAt: now,
+      };
+
+      mockPrismaService.organizationMember.findUnique = jest
+        .fn()
+        .mockResolvedValue(prismaMember);
+
+      const result = await repository.findMembership(orgId, userId);
+
+      expect(mockPrismaService.organizationMember.findUnique).toHaveBeenCalledWith(
+        {
+          where: {
+            organizationId_userId: {
+              organizationId: orgId,
+              userId,
+            },
+          },
+        },
+      );
+
+      expect(result).toBeInstanceOf(OrganizationMember);
+      expect(result?.organizationId).toBe(orgId);
+      expect(result?.userId).toBe(userId);
+      expect(result?.role).toBe(OrganizationRole.MANAGER);
+    });
+
+    it('should return null when membership does not exist', async () => {
+      mockPrismaService.organizationMember.findUnique = jest
+        .fn()
+        .mockResolvedValue(null);
+
+      const result = await repository.findMembership('org-999', 'user-999');
+
+      expect(result).toBeNull();
+    });
+  });
 });

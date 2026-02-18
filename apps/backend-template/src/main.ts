@@ -32,14 +32,16 @@ async function bootstrap() {
   app.setGlobalPrefix(globalPrefix);
 
   const config = new DocumentBuilder()
-    .setTitle('Backend Template API')
-    .setDescription('The backend template API description')
+    .setTitle('Santa Tech Task - Songs Management API')
+    .setDescription('API for a song-sharing platform that connects songwriter managers with their songwriters.')
     .setVersion('1.0')
     .addTag('template')
     .addCookieAuth('better-auth.session_token')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('docs', app, document, {
+  customSiteTitle: 'Santa Tech Task API Docs',
+});
 
   const port = process.env.PORT;
   await app.listen(port);

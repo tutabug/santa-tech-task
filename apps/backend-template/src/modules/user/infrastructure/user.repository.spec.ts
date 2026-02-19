@@ -1,12 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
-
-import { PrismaService } from '../../../database/prisma.service';
 import { User } from '../domain/user.entity';
 import { UserRepository } from './user.repository';
 
 describe('UserRepository', () => {
   let repository: UserRepository;
-  let prisma: PrismaService;
+  let txHost: any;
 
   const now = new Date();
   const mockUser = User.reconstitute(
@@ -36,22 +33,16 @@ describe('UserRepository', () => {
       findMany: jest.fn(),
       delete: jest.fn(),
     },
-    $transaction: jest.fn(),
   };
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        UserRepository,
-        {
-          provide: PrismaService,
-          useValue: mockPrismaService,
-        },
-      ],
-    }).compile();
-
-    repository = module.get<UserRepository>(UserRepository);
-    prisma = module.get<PrismaService>(PrismaService);
+  beforeEach(() => {
+    txHost = {
+      tx: mockPrismaService,
+      withTransaction: jest.fn(async (callback: () => Promise<void>) =>
+        callback(),
+      ),
+    };
+    repository = new UserRepository(txHost);
     jest.clearAllMocks();
   });
 
@@ -69,7 +60,7 @@ describe('UserRepository', () => {
 
       const result = await repository.save(newUser);
 
-      expect(prisma.user.upsert).toHaveBeenCalledWith(
+      expect(txHost.tx.user.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: newUser.id },
         }),
@@ -83,7 +74,7 @@ describe('UserRepository', () => {
 
       const result = await repository.save(mockUser);
 
-      expect(prisma.user.upsert).toHaveBeenCalledWith(
+      expect(txHost.tx.user.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: mockUser.id },
         }),
@@ -97,13 +88,7 @@ describe('UserRepository', () => {
       const user1 = User.create('user1@example.com', 'User 1');
       const user2 = User.create('user2@example.com', 'User 2');
 
-      const mockTx = {
-        user: {
-          upsert: jest.fn(),
-        },
-      };
-
-      mockTx.user.upsert
+      mockPrismaService.user.upsert
         .mockResolvedValueOnce({
           ...mockPrismaUser,
           id: user1.id,
@@ -117,14 +102,10 @@ describe('UserRepository', () => {
           name: 'User 2',
         });
 
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
-
       const result = await repository.saveMany([user1, user2]);
 
-      expect(mockPrismaService.$transaction).toHaveBeenCalled();
-      expect(mockTx.user.upsert).toHaveBeenCalledTimes(2);
+      expect(txHost.withTransaction).toHaveBeenCalled();
+      expect(txHost.tx.user.upsert).toHaveBeenCalledTimes(2);
       expect(result).toHaveLength(2);
       expect(result[0].email).toBe('user1@example.com');
       expect(result[1].email).toBe('user2@example.com');
@@ -178,7 +159,7 @@ describe('UserRepository', () => {
 
       await repository.delete('123');
 
-      expect(prisma.user.delete).toHaveBeenCalledWith({ where: { id: '123' } });
+      expect(txHost.tx.user.delete).toHaveBeenCalledWith({ where: { id: '123' } });
     });
   });
 });

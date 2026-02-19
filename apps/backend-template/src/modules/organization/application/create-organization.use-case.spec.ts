@@ -1,32 +1,41 @@
 import { CreateOrganizationUseCase } from './create-organization.use-case';
 import { Organization, OrganizationMember, OrganizationRole } from '../domain';
 
+jest.mock('@nestjs-cls/transactional', () => ({
+  ...jest.requireActual('@nestjs-cls/transactional'),
+  Transactional: () =>
+    (
+      _target: unknown,
+      _propertyKey: string | symbol,
+      descriptor: PropertyDescriptor,
+    ) => descriptor,
+}));
+
 describe('CreateOrganizationUseCase', () => {
   let useCase: CreateOrganizationUseCase;
-  let mockOrganizationRepository: any;
-  let mockOrganizationMemberRepository: any;
-  let mockPrismaService: any;
+  let mockOrganizationRepository: {
+    save: jest.Mock;
+    findByUserId: jest.Mock;
+  };
+  let mockOrganizationMemberRepository: {
+    save: jest.Mock;
+    findMembership: jest.Mock;
+  };
 
   beforeEach(() => {
     mockOrganizationRepository = {
       save: jest.fn(),
+      findByUserId: jest.fn(),
     };
 
     mockOrganizationMemberRepository = {
       save: jest.fn(),
-    };
-
-    mockPrismaService = {
-      $transaction: jest.fn().mockImplementation((callback) => {
-        // Simulate transaction by calling the callback
-        return callback(null);
-      }),
+      findMembership: jest.fn(),
     };
 
     useCase = new CreateOrganizationUseCase(
       mockOrganizationRepository,
       mockOrganizationMemberRepository,
-      mockPrismaService,
     );
   });
 
@@ -51,9 +60,6 @@ describe('CreateOrganizationUseCase', () => {
       expect(result.name).toBe(name);
       expect(result.description).toBe(description);
       expect(result.id).toBeDefined();
-
-      // Verify transaction was used
-      expect(mockPrismaService.$transaction).toHaveBeenCalled();
 
       // Verify both repositories were called
       expect(mockOrganizationRepository.save).toHaveBeenCalledWith(
@@ -85,30 +91,6 @@ describe('CreateOrganizationUseCase', () => {
 
       expect(result.name).toBe(name);
       expect(result.description).toBeNull();
-    });
-
-    it('should ensure atomicity with transaction', async () => {
-      const name = 'Transactional Org';
-      const creatorId = 'user-789';
-
-      let transactionCallback: any;
-      mockPrismaService.$transaction.mockImplementation((callback) => {
-        transactionCallback = callback;
-        return callback(null);
-      });
-
-      mockOrganizationRepository.save.mockImplementation((org) =>
-        Promise.resolve(org),
-      );
-      mockOrganizationMemberRepository.save.mockImplementation((member) =>
-        Promise.resolve(member),
-      );
-
-      await useCase.execute(name, creatorId);
-
-      // Verify transaction was invoked
-      expect(mockPrismaService.$transaction).toHaveBeenCalled();
-      expect(transactionCallback).toBeDefined();
     });
 
     it('should maintain proper sequence: org created first, then member', async () => {

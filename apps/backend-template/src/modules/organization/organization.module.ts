@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from '../../database/database.module';
 import { OrganizationController } from './organization.controller';
 import {
   CreateOrganizationUseCase,
@@ -24,7 +23,7 @@ import {
 } from './guards';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [],
   controllers: [OrganizationController],
   providers: [
     // Application Layer

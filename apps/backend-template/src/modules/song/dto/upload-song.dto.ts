@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional, IsString, IsInt, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 /**
  * Input DTO for uploading a song.
@@ -29,8 +30,9 @@ export class UploadSongDto {
     description: 'Optional duration in seconds',
     required: false,
   })
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined && value !== '' ? parseInt(value, 10) : undefined))
   @IsInt()
   @Min(0)
-  @IsOptional()
   duration?: number;
 }

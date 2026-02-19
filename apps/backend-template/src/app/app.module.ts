@@ -14,6 +14,7 @@ import { Module } from '@nestjs/common';
 import { OrganizationModule } from '../modules/organization/organization.module';
 import { PaginationModule } from '../common/pagination';
 import { ResponseInterceptor } from '../common/interceptors/response.interceptor';
+import { SongModule } from '../modules/song/song.module';
 import { UserModule } from '../modules/user/user.module';
 import appConfig from '../config/app.config';
 import { randomUUID } from 'crypto';
@@ -65,6 +66,7 @@ import { validate } from '../config/env.schema';
     AuthModule,
     UserModule,
     OrganizationModule,
+    SongModule,
     HealthModule,
   ],
   controllers: [],

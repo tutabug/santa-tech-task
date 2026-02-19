@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBody,
   ApiConsumes,
   ApiOperation,
   ApiResponse,
@@ -82,6 +83,35 @@ export class SongController {
   )
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Song file upload with metadata',
+    schema: {
+      type: 'object',
+      required: ['title', 'file'],
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Audio file (mp3, wav, ogg, flac, aac, m4a). Max 50 MB.',
+        },
+        title: {
+          type: 'string',
+          example: 'Midnight Dreams',
+          description: 'Title of the song',
+        },
+        artist: {
+          type: 'string',
+          example: 'John Doe',
+          description: 'Artist name (optional)',
+        },
+        duration: {
+          type: 'integer',
+          example: 240,
+          description: 'Duration in seconds (optional)',
+        },
+      },
+    },
+  })
   @ApiOperation({
     summary: 'Upload a song',
     description:
@@ -101,7 +131,10 @@ export class SongController {
     @Param('id') organizationId: string,
     @UploadedFile(
       new ParseFilePipeBuilder()
-        .addFileTypeValidator({ fileType: AUDIO_MIME_REGEX })
+        .addFileTypeValidator({
+          fileType: AUDIO_MIME_REGEX,
+          fallbackToMimetype: true,
+        })
         .addMaxSizeValidator({ maxSize: MAX_FILE_SIZE })
         .build({ errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY }),
     )

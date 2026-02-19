@@ -1,19 +1,22 @@
 import { IUserRepository } from '../domain/user.repository.interface';
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../database/prisma.service';
+import { TransactionHost } from '@nestjs-cls/transactional';
+import { PrismaTransactionalAdapter } from '../../../database/prisma-transactional.types';
 import { User } from '../domain/user.entity';
 import { UserMapper } from './user.mapper';
 
 @Injectable()
 export class UserRepository implements IUserRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {}
 
   async save(user: User): Promise<User> {
     const data = UserMapper.toPersistence(user);
 
     // Since User entities always have IDs (generated at creation),
     // we use upsert to handle both create and update scenarios.
-    const saved = await this.prisma.user.upsert({
+    const saved = await this.txHost.tx.user.upsert({
       where: { id: user.id },
       update: {
         email: data.email,
@@ -37,10 +40,10 @@ export class UserRepository implements IUserRepository {
     const results: User[] = [];
 
     // Use a transaction to ensure atomicity when saving multiple users
-    await this.prisma.$transaction(async (tx) => {
+    await this.txHost.withTransaction(async () => {
       for (const user of users) {
         const data = UserMapper.toPersistence(user);
-        const saved = await tx.user.upsert({
+        const saved = await this.txHost.tx.user.upsert({
           where: { id: user.id },
           update: {
             email: data.email,
@@ -65,7 +68,7 @@ export class UserRepository implements IUserRepository {
   }
 
   async findById(id: string): Promise<User | null> {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.txHost.tx.user.findUnique({
       where: { id },
     });
     if (!user) return null;
@@ -73,7 +76,7 @@ export class UserRepository implements IUserRepository {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.txHost.tx.user.findUnique({
       where: { email },
     });
     if (!user) return null;
@@ -81,12 +84,12 @@ export class UserRepository implements IUserRepository {
   }
 
   async findAll(): Promise<User[]> {
-    const users = await this.prisma.user.findMany();
+    const users = await this.txHost.tx.user.findMany();
     return users.map(UserMapper.toDomain);
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.user.delete({
+    await this.txHost.tx.user.delete({
       where: { id },
     });
   }

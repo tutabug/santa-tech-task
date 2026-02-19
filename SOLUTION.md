@@ -22,7 +22,7 @@ I treated this as a real-world prototype — the kind you'd hand off to a team f
 
 ### ADR-2: Domain-Driven Design with Strict Layer Separation
 
-**Context:** The task is a prototype, but the SOLUTION.md asks for "what would you add with more time" — signalling that extensibility matters.
+**Context:** The task is a prototype, but the task doc asks for "what would you add with more time" — signalling that extensibility matters.
 
 **Decision:** Full DDD with Presentation → Application → Domain → Infrastructure layering. Aggregates own all state changes and generate their own IDs via `randomUUID()`.
 
@@ -140,6 +140,7 @@ The schema models the **complete domain** including entities and relationships n
 - **Planning with expensive models first**: Using Opus 4.6 for architecture planning and then switching to auto for code generation was highly effective. Expensive models make fewer mistakes in code generation too.
 - **Tests as a future lever**: While testing was not the focus for this prototype, the architecture is designed to be highly testable — pure domain entities, injected repository abstractions, and thin use cases all lend themselves to unit testing. In a production setting, AI-assisted test generation would be a key part of the workflow to keep confidence high after each change.
 - **Copilot instructions file**: The `.github/copilot-instructions.md` with DDD conventions significantly improved code generation quality — AI followed the established patterns consistently.
+- **Establishing patterns early**: Going slower at the start — manually building the first module end-to-end with proper DDD layering — paid off significantly. Once reference code existed in the repo, the agent could pattern-match against it and generate subsequent modules (Song, Pitch) with far fewer corrections. The upfront investment in a clean first example became the template for everything that followed.
 - **Small-batch workflow**: Committing in small increments meant AI-generated code was always reviewed in digestible chunks.
 
 ### What Didn't Work Well
@@ -173,6 +174,37 @@ The schema models the **complete domain** including entities and relationships n
 - **Transaction wiring**: AI-generated code initially injected Prisma-related transactional dependencies directly into application-layer use cases, breaking the DDD layer boundary (application layer must not depend on infrastructure). Fixing this required moving `TransactionHost` usage into the repository implementations and ensuring use cases only interact with abstract repository contracts. Understanding `@nestjs-cls/transactional` internals was necessary to get the ambient transaction propagation working correctly across layers.
 - **Bounded context boundary**: Deciding where Song and Organisation contexts should communicate required deliberate design. The ACL/port pattern added files but prevented the tight coupling that would make the modules hard to evolve independently.
 - **Balancing DDD rigour with prototype speed**: Full DDD is heavy for a take-home. The compromise was strict layers but simplified aggregates (no deep value objects or domain events). The architecture is real; the domain model is deliberately thin.
+
+---
+
+## Assumptions
+
+- **PostgreSQL over MySQL** — The provided template was pre-wired to PostgreSQL (Docker, Prisma, better-auth). Switching to MySQL would have been pure yak-shaving with no functional gain. See ADR-1.
+- **Single role per membership** — A user has one role per organisation (MANAGER or SONGWRITER), enforced at the `OrganizationMember` level. A user could theoretically hold different roles in different organisations.
+- **Direct member linking, no invites** — Per the task spec ("no email invite system needed — assume direct linking"), managers add existing users to organisations by email. The user must already be registered.
+- **No audio transcoding or metadata extraction** — Songs are stored as-is on the local filesystem. No duration detection, format conversion, or waveform analysis. Duration is optionally provided by the uploader.
+- **File storage is ephemeral** — Local filesystem inside the Docker container. Acceptable for a prototype only; production would require S3 or equivalent with CDN.
+- **Session-based auth, not JWT** — better-auth manages sessions via cookies. No bearer token flow; API consumers must maintain a cookie jar.
+- **Song belongs to exactly one organisation** — No cross-org sharing. A songwriter uploads to the org they belong to, and the song lives there.
+- **Pitch status transitions are not enforced** — The `PitchStatus` enum (DRAFT → SUBMITTED → ACCEPTED → REJECTED) exists in the schema, but the API only creates pitches in DRAFT. Transition endpoints and state-machine validation are deferred (see Improvements).
+
+---
+
+## Trade-offs
+
+| Decision | Chose | Over | Reason |
+|----------|-------|------|--------|
+| **Architecture** | Full DDD layers (Presentation → Application → Domain → Infrastructure) | Flat CRUD | Demonstrates design thinking; supports real invariants in the domain. More files, but each has a single responsibility. |
+| **Database** | PostgreSQL (existing template) | MySQL (task spec) | Avoided expensive migration of template plumbing for zero functional benefit. |
+| **Repository contracts** | Abstract classes as DI tokens | Interface + Symbol token | Eliminates `@Inject(TOKEN)` boilerplate; NestJS resolves the class directly. Less conventional but less noise. |
+| **Read/Write split (CQRS-lite)** | Separate read repositories returning flat DTOs | Single repository returning aggregates for all operations | List endpoints skip aggregate reconstruction; writes still go through domain. Two abstractions per aggregate, but reads are fast and decoupled from invariants. |
+| **Bounded context isolation** | ACL port (`OrgMembershipPort`) in Song module | Direct import of Organization module | Prevents tight coupling; Song and Org evolve independently. Duplicates guard logic — acceptable trade-off for deployability. |
+| **Tags** | Normalised `Tag` table with M:N join | JSON array column on Pitch | Queryable, deduplicated, indexable. Slightly more complex writes (`connectOrCreate`), but scales without migration. |
+| **Target artists** | Separate `PitchTargetArtist` table (1:N) | JSON array or full Artist entity | Type-safe and queryable without the overhead of a catalog entity. Easy to promote to a first-class `Artist` later. |
+| **File storage** | Local filesystem (`./uploads/songs/`) | Cloud object storage (S3) | Task specifies local storage. Simple for Docker prototype; production would use S3 + CDN. |
+| **Testing** | AI-generated tests, not reviewed | Fully curated test suite | Tests were scaffolded by the agent alongside feature code but not reviewed for quality or usefulness. The DDD architecture makes tests easy to add and refine; the priority was working features over test curation. |
+| **Transactions** | `@nestjs-cls/transactional` (ambient CLS) | Manual `tx` parameter threading | Cleaner API; repositories read from ambient context. Adds CLS dependency but avoids `tx` in every method signature. |
+| **Auth** | better-auth (session cookies) | Passport + JWT | Task requirement. Passport + JWT would be stateless (no session DB lookups, horizontal scaling is trivial), NestJS-native (`@nestjs/passport`), and easier to test via curl/Postman (just send a Bearer header). However, better-auth ships with built-in org/member management — directly mapping to the task's core domain — so the trade-off of session cookies for free org primitives was worth it for a time-boxed prototype. |
 
 ---
 

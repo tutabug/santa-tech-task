@@ -1,27 +1,39 @@
 import { Module } from '@nestjs/common';
 import { SongController } from './song.controller';
+import { PitchController } from './pitch.controller';
 import {
   UploadSongUseCase,
   ListOrganizationSongsUseCase,
   GetSongUseCase,
   SongReadRepository,
   OrgMembershipPort,
+  CreatePitchUseCase,
+  ListSongPitchesUseCase,
+  ListOrganizationPitchesUseCase,
+  PitchReadRepository,
 } from './application';
-import { SongRepository } from './domain';
+import { SongRepository, PitchRepository } from './domain';
 import {
   SongRepositoryImpl,
   SongReadRepositoryImpl,
   OrgMembershipAdapter,
+  PitchRepositoryImpl,
+  PitchReadRepositoryImpl,
 } from './infrastructure';
 import { SongMembershipGuard, SongRoleGuard } from './guards';
 
 @Module({
-  controllers: [SongController],
+  controllers: [SongController, PitchController],
   providers: [
-    // Application Layer - Use Cases
+    // Application Layer - Song Use Cases
     UploadSongUseCase,
     ListOrganizationSongsUseCase,
     GetSongUseCase,
+
+    // Application Layer - Pitch Use Cases
+    CreatePitchUseCase,
+    ListSongPitchesUseCase,
+    ListOrganizationPitchesUseCase,
 
     // Anti-Corruption Layer - Org membership port/adapter
     {
@@ -33,7 +45,7 @@ import { SongMembershipGuard, SongRoleGuard } from './guards';
     SongMembershipGuard,
     SongRoleGuard,
 
-    // Infrastructure Layer - Repository Implementations
+    // Infrastructure Layer - Song Repository Implementations
     {
       provide: SongRepository,
       useClass: SongRepositoryImpl,
@@ -41,6 +53,16 @@ import { SongMembershipGuard, SongRoleGuard } from './guards';
     {
       provide: SongReadRepository,
       useClass: SongReadRepositoryImpl,
+    },
+
+    // Infrastructure Layer - Pitch Repository Implementations
+    {
+      provide: PitchRepository,
+      useClass: PitchRepositoryImpl,
+    },
+    {
+      provide: PitchReadRepository,
+      useClass: PitchReadRepositoryImpl,
     },
   ],
   exports: [

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { PaginatedResult } from '../../../common/pagination';
 import {
   PitchListItem,
+  PitchListQuery,
   PitchReadRepository,
 } from './pitch-read.repository.interface';
 
@@ -8,19 +10,22 @@ import {
  * Use Case: List All Pitches in an Organization
  *
  * Responsibilities:
- * - Retrieves all pitches created in an organization (across all songs)
+ * - Retrieves all pitches in an organization (across all songs) with pagination
  * - Thin orchestration only - delegates to read repository
  * - Returns flat read models (not aggregates)
  * - NO business logic
  *
- * Inputs: organizationId
- * Output: Array of PitchListItem read models
+ * Inputs: organizationId, query (limit, cursor)
+ * Output: PaginatedResult<PitchListItem>
  */
 @Injectable()
 export class ListOrganizationPitchesUseCase {
   constructor(private readonly pitchReadRepository: PitchReadRepository) {}
 
-  async execute(organizationId: string): Promise<PitchListItem[]> {
-    return this.pitchReadRepository.findByOrganizationId(organizationId);
+  async execute(
+    organizationId: string,
+    query: PitchListQuery,
+  ): Promise<PaginatedResult<PitchListItem>> {
+    return this.pitchReadRepository.findByOrganizationId(organizationId, query);
   }
 }

@@ -1,3 +1,5 @@
+import { PaginatedResult, PaginationQuery } from '../../../common/pagination';
+
 /**
  * Pitch List Item - Read Model
  *
@@ -18,6 +20,12 @@ export type PitchListItem = {
 };
 
 /**
+ * Pitch List Query Type
+ * Composition of PaginationQuery (limit, cursor)
+ */
+export type PitchListQuery = PaginationQuery;
+
+/**
  * Pitch Read Repository Interface - Application Layer
  *
  * Defines the contract for querying pitches in read-optimized fashion.
@@ -30,22 +38,28 @@ export type PitchListItem = {
  */
 export abstract class PitchReadRepository {
   /**
-   * Finds all pitches for a specific song.
+   * Finds pitches for a specific song with cursor-based pagination.
    * Results are sorted by creation date descending (newest first).
    *
    * @param songId - The song ID
-   * @returns Array of pitch read models
+   * @param query - Pagination query (limit, cursor)
+   * @returns Paginated list of pitch read models
    */
-  abstract findBySongId(songId: string): Promise<PitchListItem[]>;
+  abstract findBySongId(
+    songId: string,
+    query: PitchListQuery,
+  ): Promise<PaginatedResult<PitchListItem>>;
 
   /**
-   * Finds all pitches in an organization (across all songs).
+   * Finds pitches in an organization (across all songs) with cursor-based pagination.
    * Results are sorted by creation date descending (newest first).
    *
    * @param organizationId - The organization ID
-   * @returns Array of pitch read models
+   * @param query - Pagination query (limit, cursor)
+   * @returns Paginated list of pitch read models
    */
   abstract findByOrganizationId(
     organizationId: string,
-  ): Promise<PitchListItem[]>;
+    query: PitchListQuery,
+  ): Promise<PaginatedResult<PitchListItem>>;
 }

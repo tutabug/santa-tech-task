@@ -11,6 +11,12 @@ import { Pitch, PitchStatus } from './domain/pitch.entity';
 import { PitchResponseDto } from './dto';
 import { SessionGuard } from '../../common/guards/session.guard';
 import { SongMembershipGuard, SongRoleGuard } from './guards';
+import {
+  CursorDecodePipe,
+  CursorService,
+  PaginatedResult,
+  PaginationQuery,
+} from '../../common/pagination';
 
 describe('PitchController', () => {
   let controller: PitchController;
@@ -35,6 +41,8 @@ describe('PitchController', () => {
         { provide: CreatePitchUseCase, useValue: mockCreatePitchUseCase },
         { provide: ListSongPitchesUseCase, useValue: mockListSongPitchesUseCase },
         { provide: ListOrganizationPitchesUseCase, useValue: mockListOrganizationPitchesUseCase },
+        CursorService,
+        CursorDecodePipe,
       ],
     })
       .overrideGuard(SessionGuard)
@@ -92,7 +100,9 @@ describe('PitchController', () => {
   });
 
   describe('listSongPitches', () => {
-    it('should return list of pitch response DTOs for a song', async () => {
+    const defaultQuery: PaginationQuery = { limit: 100 };
+
+    it('should return paginated list of pitch response DTOs for a song', async () => {
       const now = new Date();
       const items: PitchListItem[] = [
         {
@@ -119,28 +129,46 @@ describe('PitchController', () => {
         },
       ];
 
-      mockListSongPitchesUseCase.execute.mockResolvedValue(items);
+      const paginatedResult: PaginatedResult<PitchListItem> = {
+        items,
+        pagination: { limit: 100, hasMore: false, nextCursor: null },
+      };
 
-      const result = await controller.listSongPitches(songId);
+      mockListSongPitchesUseCase.execute.mockResolvedValue(paginatedResult);
 
-      expect(mockListSongPitchesUseCase.execute).toHaveBeenCalledWith(songId);
-      expect(result).toHaveLength(2);
-      expect(result[0]).toBeInstanceOf(PitchResponseDto);
-      expect(result[0].id).toBe('pitch-1');
-      expect(result[1].id).toBe('pitch-2');
+      const result = await controller.listSongPitches(songId, defaultQuery);
+
+      expect(mockListSongPitchesUseCase.execute).toHaveBeenCalledWith(
+        songId,
+        defaultQuery,
+      );
+      expect(result.items).toHaveLength(2);
+      expect(result.items[0]).toBeInstanceOf(PitchResponseDto);
+      expect(result.items[0].id).toBe('pitch-1');
+      expect(result.items[1].id).toBe('pitch-2');
+      expect(result.pagination.hasMore).toBe(false);
+      expect(result.pagination.nextCursor).toBeNull();
     });
 
-    it('should return empty array when no pitches exist', async () => {
-      mockListSongPitchesUseCase.execute.mockResolvedValue([]);
+    it('should return empty paginated result when no pitches exist', async () => {
+      const paginatedResult: PaginatedResult<PitchListItem> = {
+        items: [],
+        pagination: { limit: 100, hasMore: false, nextCursor: null },
+      };
 
-      const result = await controller.listSongPitches(songId);
+      mockListSongPitchesUseCase.execute.mockResolvedValue(paginatedResult);
 
-      expect(result).toEqual([]);
+      const result = await controller.listSongPitches(songId, defaultQuery);
+
+      expect(result.items).toEqual([]);
+      expect(result.pagination.hasMore).toBe(false);
     });
   });
 
   describe('listOrganizationPitches', () => {
-    it('should return list of pitch response DTOs for an organization', async () => {
+    const defaultQuery: PaginationQuery = { limit: 100 };
+
+    it('should return paginated list of pitch response DTOs for an organization', async () => {
       const now = new Date();
       const items: PitchListItem[] = [
         {
@@ -156,16 +184,26 @@ describe('PitchController', () => {
         },
       ];
 
-      mockListOrganizationPitchesUseCase.execute.mockResolvedValue(items);
+      const paginatedResult: PaginatedResult<PitchListItem> = {
+        items,
+        pagination: { limit: 100, hasMore: false, nextCursor: null },
+      };
 
-      const result = await controller.listOrganizationPitches(organizationId);
+      mockListOrganizationPitchesUseCase.execute.mockResolvedValue(paginatedResult);
+
+      const result = await controller.listOrganizationPitches(
+        organizationId,
+        defaultQuery,
+      );
 
       expect(mockListOrganizationPitchesUseCase.execute).toHaveBeenCalledWith(
         organizationId,
+        defaultQuery,
       );
-      expect(result).toHaveLength(1);
-      expect(result[0]).toBeInstanceOf(PitchResponseDto);
-      expect(result[0].status).toBe('ACCEPTED');
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]).toBeInstanceOf(PitchResponseDto);
+      expect(result.items[0].status).toBe('ACCEPTED');
+      expect(result.pagination.hasMore).toBe(false);
     });
   });
 });

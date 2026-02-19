@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -16,6 +17,12 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { SessionGuard } from '../../common/guards/session.guard';
+import {
+  ApiPaginatedResponse,
+  CursorDecodePipe,
+  PaginatedResult,
+  PaginationQuery,
+} from '../../common/pagination';
 import {
   CreatePitchUseCase,
   ListSongPitchesUseCase,
@@ -93,20 +100,21 @@ export class PitchController {
   @ApiOperation({
     summary: 'List pitches for a song',
     description:
-      'Returns all pitches created for a specific song. Accessible to all organization members.',
+      'Returns pitches created for a specific song with cursor-based pagination. Accessible to all organization members.',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'List of pitches for the song',
-    type: [PitchResponseDto],
-  })
+  @ApiPaginatedResponse(PitchResponseDto)
   @ApiResponse({ status: 401, description: 'User not authenticated' })
   @ApiResponse({ status: 403, description: 'User is not a member of this organization' })
   async listSongPitches(
     @Param('songId') songId: string,
-  ): Promise<PitchResponseDto[]> {
-    const items = await this.listSongPitchesUseCase.execute(songId);
-    return items.map(PitchResponseDto.fromReadModel);
+    @Query(CursorDecodePipe) query: PaginationQuery,
+  ): Promise<PaginatedResult<PitchResponseDto>> {
+    const result = await this.listSongPitchesUseCase.execute(songId, query);
+
+    return {
+      items: result.items.map(PitchResponseDto.fromReadModel),
+      pagination: result.pagination,
+    };
   }
 
   /**
@@ -119,19 +127,23 @@ export class PitchController {
   @ApiOperation({
     summary: 'List all pitches in organization',
     description:
-      'Returns all pitches across all songs in the organization. Accessible to all organization members.',
+      'Returns all pitches across all songs in the organization with cursor-based pagination. Accessible to all organization members.',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'List of all pitches in the organization',
-    type: [PitchResponseDto],
-  })
+  @ApiPaginatedResponse(PitchResponseDto)
   @ApiResponse({ status: 401, description: 'User not authenticated' })
   @ApiResponse({ status: 403, description: 'User is not a member of this organization' })
   async listOrganizationPitches(
     @Param('id') organizationId: string,
-  ): Promise<PitchResponseDto[]> {
-    const items = await this.listOrganizationPitchesUseCase.execute(organizationId);
-    return items.map(PitchResponseDto.fromReadModel);
+    @Query(CursorDecodePipe) query: PaginationQuery,
+  ): Promise<PaginatedResult<PitchResponseDto>> {
+    const result = await this.listOrganizationPitchesUseCase.execute(
+      organizationId,
+      query,
+    );
+
+    return {
+      items: result.items.map(PitchResponseDto.fromReadModel),
+      pagination: result.pagination,
+    };
   }
 }

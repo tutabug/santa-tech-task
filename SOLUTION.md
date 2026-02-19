@@ -166,6 +166,7 @@ The schema models the **complete domain** including entities and relationships n
 9. **Song Filtering & Search** — Filter by title, artist, tags, date range; full-text search.
 10. **Dependency Version Bumps** — Bump NestJS, Prisma, better-auth, and other packages to latest stable before building features. Starting green on dependencies means fewer surprises mid-development, access to latest bug fixes and security patches, and less upgrade overhead. Ideally, automated dependency updates via GitHub Dependabot (or Renovate) would keep packages current continuously without manual effort.
 11. **AI Instruction Portability** — Make the coding conventions file tool-agnostic so it works across GitHub Copilot, Cursor, Cline, and other AI assistants.
+12. **Observability** — Structured request-scoped logging (correlation IDs, user context), metrics (request latency, error rates, upload sizes) exposed via Prometheus, distributed tracing with OpenTelemetry, and alerting/notifications for critical failures (e.g., failed uploads, auth errors). The current setup has basic pino logging; production would need dashboards (Grafana), centralized log aggregation (ELK/Loki), and health-based alerts.
 
 ---
 

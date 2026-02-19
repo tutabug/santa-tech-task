@@ -15,7 +15,7 @@ export class CursorDecodePipe
   constructor(private readonly cursorService: CursorService) {}
 
   transform(value: { cursor?: string; limit?: number }): PaginationQuery {
-    const limit = value.limit ?? DEFAULT_PAGE_LIMIT;
+    const limit = value.limit != null ? Number(value.limit) : DEFAULT_PAGE_LIMIT;
     let cursor: PaginationCursor | undefined;
 
     if (value.cursor) {

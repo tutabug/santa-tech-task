@@ -14,6 +14,9 @@ export const envSchema = z.object({
   BETTER_AUTH_URL: z.url().optional(),
 
   CORS_ORIGIN: z.string().optional(),
+
+  // File Upload
+  UPLOAD_DIR: z.string().default('./uploads/songs'),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

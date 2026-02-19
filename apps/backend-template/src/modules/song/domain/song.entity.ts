@@ -105,6 +105,16 @@ export class Song {
     );
   }
 
+  // ── Domain Methods ───────────────────────────────────────────────────
+
+  /**
+   * Checks whether this song belongs to the specified organization.
+   * Used for cross-aggregate validation when operating on related entities (e.g. Pitch).
+   */
+  belongsToOrganization(organizationId: string): boolean {
+    return this._organizationId === organizationId;
+  }
+
   // ── Getters ──────────────────────────────────────────────────────────
 
   get id(): string {

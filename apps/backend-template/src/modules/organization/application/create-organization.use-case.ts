@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../database/prisma.service';
+import { Transactional } from '@nestjs-cls/transactional';
 import {
   Organization,
   OrganizationMember,
@@ -27,30 +27,25 @@ export class CreateOrganizationUseCase {
   constructor(
     private readonly organizationRepository: OrganizationRepository,
     private readonly organizationMemberRepository: OrganizationMemberRepository,
-    private readonly prisma: PrismaService,
   ) {}
 
+  @Transactional()
   async execute(
     name: string,
     creatorId: string,
     description?: string,
   ): Promise<Organization> {
-    // Wrap in transaction to ensure org and membership are created atomically
-    const organization = await this.prisma.$transaction(async (tx) => {
-      const org = Organization.create(name, description);
+    const org = Organization.create(name, description);
 
-      const membership = OrganizationMember.create(
-        org.id,
-        creatorId,
-        OrganizationRole.MANAGER,
-      );
-      
-      await this.organizationRepository.save(org);
-      await this.organizationMemberRepository.save(membership);
+    const membership = OrganizationMember.create(
+      org.id,
+      creatorId,
+      OrganizationRole.MANAGER,
+    );
 
-      return org;
-    });
+    await this.organizationRepository.save(org);
+    await this.organizationMemberRepository.save(membership);
 
-    return organization;
+    return org;
   }
 }

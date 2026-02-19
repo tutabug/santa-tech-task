@@ -34,12 +34,11 @@ import {
   ListOrganizationSongsUseCase,
   GetSongUseCase,
 } from './application';
-import { OrganizationRole } from '../organization/domain';
 import {
-  OrganizationMembershipGuard,
-  OrganizationRoleGuard,
-  RequireOrgRole,
-} from '../organization/guards';
+  SongMembershipGuard,
+  SongRoleGuard,
+  RequireSongRole,
+} from './guards';
 import {
   UploadSongDto,
   SongResponseDto,
@@ -66,8 +65,8 @@ export class SongController {
    * Upload a new song file
    */
   @Post()
-  @UseGuards(SessionGuard, OrganizationRoleGuard)
-  @RequireOrgRole(OrganizationRole.SONGWRITER)
+  @UseGuards(SessionGuard, SongRoleGuard)
+  @RequireSongRole('SONGWRITER')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -129,7 +128,7 @@ export class SongController {
    * List all songs in the organization
    */
   @Get()
-  @UseGuards(SessionGuard, OrganizationMembershipGuard)
+  @UseGuards(SessionGuard, SongMembershipGuard)
   @ApiOperation({
     summary: 'List songs in organization',
     description:
@@ -158,7 +157,7 @@ export class SongController {
    * Get a single song's details
    */
   @Get(':songId')
-  @UseGuards(SessionGuard, OrganizationMembershipGuard)
+  @UseGuards(SessionGuard, SongMembershipGuard)
   @ApiOperation({
     summary: 'Get song details',
     description: 'Returns details of a specific song. Accessible to organization members.',

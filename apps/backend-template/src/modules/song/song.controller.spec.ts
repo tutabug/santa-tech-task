@@ -10,10 +10,7 @@ import { Song } from './domain/song.entity';
 import { SongResponseDto } from './dto';
 import { SessionGuard } from '../../common/guards/session.guard';
 import { CursorDecodePipe, CursorService } from '../../common/pagination';
-import {
-  OrganizationMembershipGuard,
-  OrganizationRoleGuard,
-} from '../organization/guards';
+import { SongMembershipGuard, SongRoleGuard } from './guards';
 
 describe('SongController', () => {
   let controller: SongController;
@@ -61,9 +58,9 @@ describe('SongController', () => {
     })
       .overrideGuard(SessionGuard)
       .useValue(mockGuard)
-      .overrideGuard(OrganizationRoleGuard)
+      .overrideGuard(SongRoleGuard)
       .useValue(mockGuard)
-      .overrideGuard(OrganizationMembershipGuard)
+      .overrideGuard(SongMembershipGuard)
       .useValue(mockGuard)
       .compile();
 

@@ -173,3 +173,9 @@ The schema models the **complete domain** including entities and relationships n
 - **Transaction wiring**: AI-generated code initially injected Prisma-related transactional dependencies directly into application-layer use cases, breaking the DDD layer boundary (application layer must not depend on infrastructure). Fixing this required moving `TransactionHost` usage into the repository implementations and ensuring use cases only interact with abstract repository contracts. Understanding `@nestjs-cls/transactional` internals was necessary to get the ambient transaction propagation working correctly across layers.
 - **Bounded context boundary**: Deciding where Song and Organisation contexts should communicate required deliberate design. The ACL/port pattern added files but prevented the tight coupling that would make the modules hard to evolve independently.
 - **Balancing DDD rigour with prototype speed**: Full DDD is heavy for a take-home. The compromise was strict layers but simplified aggregates (no deep value objects or domain events). The architecture is real; the domain model is deliberately thin.
+
+---
+
+## What I'd Do Differently
+
+- **Update SOLUTION.md incrementally** — I wrote this document at the end, reconstructing decisions from memory and commit history. In hindsight, I'd update it as I go — capturing each ADR and trade-off at the moment the decision is made. That way the rationale is fresh, nothing gets lost, and the document stays in sync with the code throughout development.

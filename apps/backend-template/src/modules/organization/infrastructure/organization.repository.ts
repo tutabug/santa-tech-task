@@ -1,19 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../database/prisma.service';
+import { TransactionHost } from '@nestjs-cls/transactional';
+import { PrismaTransactionalAdapter } from '../../../database/prisma-transactional.types';
 import { Organization } from '../domain/organization.entity';
 import { OrganizationRepository } from '../domain/organization.repository.interface';
 import { OrganizationMapper } from './organization.mapper';
 
 @Injectable()
 export class OrganizationRepositoryImpl extends OrganizationRepository {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {
     super();
   }
 
   async save(organization: Organization): Promise<Organization> {
     const data = OrganizationMapper.toPersistence(organization);
 
-    const saved = await this.prisma.organization.upsert({
+    const saved = await this.txHost.tx.organization.upsert({
       where: { id: organization.id },
       update: {
         name: data.name,
@@ -31,7 +34,7 @@ export class OrganizationRepositoryImpl extends OrganizationRepository {
   }
 
   async findByUserId(userId: string): Promise<Organization[]> {
-    const organizations = await this.prisma.organization.findMany({
+    const organizations = await this.txHost.tx.organization.findMany({
       where: {
         members: {
           some: {

@@ -6,3 +6,4 @@ export * from './org-membership.port';
 export * from './create-pitch.use-case';
 export * from './list-song-pitches.use-case';
 export * from './list-organization-pitches.use-case';
+export * from './pitch-read.repository.interface';

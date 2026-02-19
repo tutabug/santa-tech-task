@@ -6,7 +6,7 @@ import { PitchRepository } from '../domain/pitch.repository.interface';
 import { PitchMapper } from './pitch.mapper';
 
 /**
- * Pitch Repository Implementation - Infrastructure Layer
+ * Pitch Repository Implementation - Infrastructure Layer (Write Side)
  *
  * Implements the PitchRepository interface using Prisma ORM.
  * Uses TransactionHost for transactional operations.
@@ -15,6 +15,8 @@ import { PitchMapper } from './pitch.mapper';
  * Handles collection persistence:
  * - targetArtists: deleted and recreated on each save (simple lifecycle)
  * - tags: connected or created by name via connectOrCreate (find-or-create pattern)
+ *
+ * Read-optimized queries are handled by PitchReadRepositoryImpl.
  */
 @Injectable()
 export class PitchRepositoryImpl extends PitchRepository {
@@ -98,50 +100,5 @@ export class PitchRepositoryImpl extends PitchRepository {
     if (!pitch) return null;
 
     return PitchMapper.toDomain(pitch);
-  }
-
-  /**
-   * Retrieves all Pitches for a specific song.
-   * Results are sorted by creation date descending (newest first).
-   *
-   * @param songId - The song ID
-   * @returns Array of Pitch aggregates (may be empty if no pitches)
-   */
-  async findBySongId(songId: string): Promise<Pitch[]> {
-    const pitches = await this.txHost.tx.pitch.findMany({
-      where: { songId },
-      include: {
-        targetArtists: true,
-        tags: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return pitches.map((pitch) => PitchMapper.toDomain(pitch));
-  }
-
-  /**
-   * Retrieves all Pitches in an organization.
-   * This queries across all songs in the organization by joining through the Song relation.
-   * Results are sorted by creation date descending (newest first).
-   *
-   * @param organizationId - The organization ID
-   * @returns Array of Pitch aggregates (may be empty if no pitches)
-   */
-  async findByOrganizationId(organizationId: string): Promise<Pitch[]> {
-    const pitches = await this.txHost.tx.pitch.findMany({
-      where: {
-        song: {
-          organizationId,
-        },
-      },
-      include: {
-        targetArtists: true,
-        tags: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return pitches.map((pitch) => PitchMapper.toDomain(pitch));
   }
 }

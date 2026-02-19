@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { OrganizationController } from './organization.controller';
 import {
+  AddOrganizationMemberUseCase,
   CreateOrganizationUseCase,
   ListOrganizationMembersUseCase,
   ListUserOrganizationsUseCase,
@@ -10,6 +11,7 @@ import {
 import {
   OrganizationRepository,
   OrganizationMemberRepository,
+  OrganizationMembershipDomainService,
 } from './domain';
 import {
   OrganizationMemberReadRepositoryImpl,
@@ -21,12 +23,14 @@ import {
   OrganizationMembershipGuard,
   OrganizationRoleGuard,
 } from './guards';
+import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [],
+  imports: [UserModule],
   controllers: [OrganizationController],
   providers: [
     // Application Layer
+    AddOrganizationMemberUseCase,
     CreateOrganizationUseCase,
     ListOrganizationMembersUseCase,
     ListUserOrganizationsUseCase,
@@ -47,6 +51,14 @@ import {
     {
       provide: OrganizationMemberRepository,
       useClass: OrganizationMemberRepositoryImpl,
+    },
+
+    // Domain Layer - Domain Services (wired via factory to stay framework-agnostic)
+    {
+      provide: OrganizationMembershipDomainService,
+      useFactory: (repo: OrganizationMemberRepository) =>
+        new OrganizationMembershipDomainService(repo),
+      inject: [OrganizationMemberRepository],
     },
 
     // Guards

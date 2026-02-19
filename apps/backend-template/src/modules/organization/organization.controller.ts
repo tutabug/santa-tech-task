@@ -17,15 +17,18 @@ import {
   PaginationQuery,
 } from '../../common/pagination';
 import {
+  AddOrganizationMemberUseCase,
   CreateOrganizationUseCase,
   ListOrganizationMembersUseCase,
   ListUserOrganizationsUseCase,
 } from './application';
 import { OrganizationRole } from './domain';
 import {
+  AddMemberDto,
   CreateOrganizationDto,
   OrganizationListItemDto,
   OrganizationMemberListItemDto,
+  OrganizationMemberResponseDto,
   OrganizationResponseDto,
 } from './dto';
 import { OrganizationRoleGuard, RequireOrgRole } from './guards';
@@ -34,6 +37,7 @@ import { OrganizationRoleGuard, RequireOrgRole } from './guards';
 @Controller('organizations')
 export class OrganizationController {
   constructor(
+    private readonly addOrganizationMemberUseCase: AddOrganizationMemberUseCase,
     private readonly createOrganizationUseCase: CreateOrganizationUseCase,
     private readonly listOrganizationMembersUseCase: ListOrganizationMembersUseCase,
     private readonly listUserOrganizationsUseCase: ListUserOrganizationsUseCase,
@@ -97,5 +101,36 @@ export class OrganizationController {
     @Query(CursorDecodePipe) query: PaginationQuery,
   ): Promise<PaginatedResult<OrganizationMemberListItemDto>> {
     return this.listOrganizationMembersUseCase.execute(organizationId, query);
+  }
+
+  @Post(':id/members')
+  @UseGuards(SessionGuard, OrganizationRoleGuard)
+  @RequireOrgRole(OrganizationRole.MANAGER)
+  @ApiOperation({
+    summary: 'Add a member to an organization',
+    description:
+      'Adds an existing user as a member of the organization with the specified role. Only managers can perform this action.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Member successfully added.',
+    type: OrganizationMemberResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input data.' })
+  @ApiResponse({ status: 401, description: 'User not authenticated.' })
+  @ApiResponse({ status: 403, description: 'User is not a manager of this organization.' })
+  @ApiResponse({ status: 404, description: 'User with the given email not found.' })
+  @ApiResponse({ status: 409, description: 'User is already a member of this organization.' })
+  async addMember(
+    @Param('id') organizationId: string,
+    @Body() dto: AddMemberDto,
+  ): Promise<OrganizationMemberResponseDto> {
+    const member = await this.addOrganizationMemberUseCase.execute(
+      organizationId,
+      dto.email,
+      dto.role,
+    );
+
+    return OrganizationMemberResponseDto.fromAggregate(member);
   }
 }

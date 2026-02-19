@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty } from 'class-validator';
 import { OrganizationRole } from '../domain';
 
 /**
@@ -8,15 +8,15 @@ import { OrganizationRole } from '../domain';
  */
 export class AddMemberDto {
   @ApiProperty({
-    example: 'user-uuid-here',
-    description: 'The UUID of the user to add to the organization',
+    example: 'songwriter@example.com',
+    description: 'The email of the user to add to the organization',
   })
-  @IsUUID()
+  @IsEmail()
   @IsNotEmpty()
-  userId: string;
+  email: string;
 
   @ApiProperty({
-    example: 'MANAGER',
+    example: 'SONGWRITER',
     description: 'The role of the member in the organization',
     enum: OrganizationRole,
   })

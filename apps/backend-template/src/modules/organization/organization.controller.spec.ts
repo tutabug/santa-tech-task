@@ -4,6 +4,7 @@ import { SessionGuard } from '../../common/guards/session.guard';
 import { CursorDecodePipe, CursorService } from '../../common/pagination';
 import { OrganizationController } from './organization.controller';
 import {
+  AddOrganizationMemberUseCase,
   CreateOrganizationUseCase,
   ListOrganizationMembersUseCase,
   ListUserOrganizationsUseCase,
@@ -18,6 +19,7 @@ import { OrganizationRoleGuard } from './guards';
 describe('OrganizationController', () => {
   let controller: OrganizationController;
   let mockCreateOrganizationUseCase: jest.Mocked<CreateOrganizationUseCase>;
+  let mockAddOrganizationMemberUseCase: jest.Mocked<AddOrganizationMemberUseCase>;
   let mockListOrganizationMembersUseCase: jest.Mocked<ListOrganizationMembersUseCase>;
   let mockListUserOrganizationsUseCase: jest.Mocked<ListUserOrganizationsUseCase>;
 
@@ -27,6 +29,9 @@ describe('OrganizationController', () => {
 
   beforeEach(async () => {
     mockCreateOrganizationUseCase = {
+      execute: jest.fn(),
+    } as any;
+    mockAddOrganizationMemberUseCase = {
       execute: jest.fn(),
     } as any;
     mockListOrganizationMembersUseCase = {
@@ -39,6 +44,10 @@ describe('OrganizationController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrganizationController],
       providers: [
+        {
+          provide: AddOrganizationMemberUseCase,
+          useValue: mockAddOrganizationMemberUseCase,
+        },
         {
           provide: CreateOrganizationUseCase,
           useValue: mockCreateOrganizationUseCase,

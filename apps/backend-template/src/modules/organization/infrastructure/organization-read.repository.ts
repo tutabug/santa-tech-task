@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../database/prisma.service';
+import { TransactionHost } from '@nestjs-cls/transactional';
+import { PrismaTransactionalAdapter } from '../../../database/prisma-transactional.types';
 import {
   OrganizationListItem,
   OrganizationListQuery,
@@ -13,7 +14,7 @@ import {
 @Injectable()
 export class OrganizationReadRepositoryImpl extends OrganizationReadRepository {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
     private readonly cursorService: CursorService,
   ) {
     super();
@@ -26,7 +27,7 @@ export class OrganizationReadRepositoryImpl extends OrganizationReadRepository {
     const { limit, cursor } = query;
     const take = limit + 1;
 
-    const organizations = await this.prisma.organization.findMany({
+    const organizations = await this.txHost.tx.organization.findMany({
       where: {
         members: {
           some: { userId },

@@ -1,5 +1,4 @@
 import { OrganizationMemberRepositoryImpl } from './organization-member.repository';
-import { OrganizationMemberMapper } from './organization-member.mapper';
 import {
   OrganizationMember,
   OrganizationRole,
@@ -15,7 +14,9 @@ describe('OrganizationMemberRepository', () => {
         upsert: jest.fn(),
       },
     };
-    repository = new OrganizationMemberRepositoryImpl(mockPrismaService);
+    repository = new OrganizationMemberRepositoryImpl({
+      tx: mockPrismaService,
+    } as any);
   });
 
   describe('save', () => {

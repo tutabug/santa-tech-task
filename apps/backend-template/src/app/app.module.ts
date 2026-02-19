@@ -3,7 +3,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { AuthModule } from '../modules/auth/auth.module';
 import { ClsModule } from 'nestjs-cls';
+import { ClsPluginTransactional } from '@nestjs-cls/transactional';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 import { DatabaseModule } from '../database/database.module';
+import { PrismaService } from '../database/prisma.service';
 import { GlobalExceptionFilter } from '../common/filters/global-exception.filter';
 import { HealthModule } from '../health/health.module';
 import { LoggerModule } from 'nestjs-pino';
@@ -48,6 +51,14 @@ import { validate } from '../config/env.schema';
         idGenerator: (req: import('express').Request) =>
           (req.headers['x-correlation-id'] as string) ?? randomUUID(),
       },
+      plugins: [
+        new ClsPluginTransactional({
+          // DatabaseModule is global, so PrismaService is already available
+          adapter: new TransactionalAdapterPrisma({
+            prismaInjectionToken: PrismaService,
+          }),
+        }),
+      ],
     }),
     DatabaseModule,
     PaginationModule,

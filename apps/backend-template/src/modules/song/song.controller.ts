@@ -17,6 +17,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -68,6 +69,7 @@ export class SongController {
   @Post()
   @UseGuards(SessionGuard, SongRoleGuard)
   @RequireSongRole('SONGWRITER')
+  @ApiParam({ name: 'id', description: 'Organization ID', type: String })
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -162,6 +164,7 @@ export class SongController {
    */
   @Get()
   @UseGuards(SessionGuard, SongMembershipGuard)
+  @ApiParam({ name: 'id', description: 'Organization ID', type: String })
   @ApiOperation({
     summary: 'List songs in organization',
     description:
@@ -191,6 +194,8 @@ export class SongController {
    */
   @Get(':songId')
   @UseGuards(SessionGuard, SongMembershipGuard)
+  @ApiParam({ name: 'id', description: 'Organization ID', type: String })
+  @ApiParam({ name: 'songId', description: 'Song ID', type: String })
   @ApiOperation({
     summary: 'Get song details',
     description: 'Returns details of a specific song. Accessible to organization members.',
